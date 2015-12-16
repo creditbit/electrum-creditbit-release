@@ -1,0 +1,35 @@
+#!/bin/bash
+source /root/build-config.sh
+source /root/build-common.sh
+check_vars
+
+if [[ -z "$1" ]]; then
+	echo "Please supply version number"
+	exit
+else
+	VERSION=$1
+fi
+
+function cleanup(){
+	# Remove stale wine sockets
+	rm -rf /tmp/.wine-*
+}
+
+cleanup
+
+SOURCEDIR=/opt/wine-electrum/drive_c/electrum-creditbit/Encompass-$VERSION
+
+
+cd $SOURCEDIR
+
+$PYTHON "C:/PyInstaller/pyinstaller.py" -y "C:/electrum-creditbit/deterministic.spec"
+cp /opt/wine-electrum/drive_c/electrum-creditbit/electrum-creditbit.nsi $SOURCEDIR/
+
+echo "Running c:/electrum-creditbit/Encompass-$VERSION/electrum-creditbit.nsi for install"
+xvfb-run wine c:\\"Program Files"\\NSIS\\makensis.exe -V1 c:/electrum-creditbit/Encompass-$VERSION/electrum-creditbit.nsi
+
+
+cleanup
+test -d /root/release-packages/Windows || mkdir -pv /root/release-packages/Windows
+mv /opt/wine-electrum/drive_c/electrum-creditbit/Encompass-${VERSION}/dist/electrum-creditbit-setup.exe /root/release-packages/Windows/Encompass-${VERSION}-Windows-setup.exe
+mv /opt/wine-electrum/drive_c/electrum-creditbit/Encompass-${VERSION}/dist/electrum-creditbit.exe /root/release-packages/Windows/Encompass-${VERSION}-Windows.exe
